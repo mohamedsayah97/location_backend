@@ -1,0 +1,25 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum VehicleStatus {
+  AVAILABLE
+  RESERVED
+  MAINTENANCE
+}
+
+model Vehicle {
+  id        Int           @id @default(autoincrement())
+  brand     String
+  model     String
+  year      Int?
+  price     Float
+  status    VehicleStatus @default(AVAILABLE)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
