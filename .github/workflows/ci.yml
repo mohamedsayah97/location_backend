@@ -9,6 +9,7 @@ on:
 
 jobs:
   build-and-test:
+    name: Build and Test - ${{ matrix.service }}
     runs-on: ubuntu-latest
 
     strategy:
@@ -53,7 +54,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-${{ matrix.service }}
-          path: ${{ matrix.service }}/coverage/
+          path: ${{ matrix.service }}/coverage/lcov.info
           if-no-files-found: error
 
   sonarqube:
@@ -71,29 +72,25 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: coverage-api-gateway
-          path: coverage-artifacts/api-gateway
+          path: api-gateway/coverage
 
       - name: Download Booking Service coverage
         uses: actions/download-artifact@v4
         with:
           name: coverage-booking-service
-          path: coverage-artifacts/booking-service
+          path: booking-service/coverage
 
       - name: Download Vehicle Service coverage
         uses: actions/download-artifact@v4
         with:
           name: coverage-vehicle-service
-          path: coverage-artifacts/vehicle-service
+          path: vehicle-service/coverage
 
-      - name: Restore coverage reports
+      - name: Fix LCOV paths
         run: |
-          mkdir -p api-gateway/coverage
-          mkdir -p booking-service/coverage
-          mkdir -p vehicle-service/coverage
-
-          cp coverage-artifacts/api-gateway/lcov.info api-gateway/coverage/
-          cp coverage-artifacts/booking-service/lcov.info booking-service/coverage/
-          cp coverage-artifacts/vehicle-service/lcov.info vehicle-service/coverage/
+          sed -i 's#^SF:src\\#SF:api-gateway/src/#; s#\\#/#g' api-gateway/coverage/lcov.info
+          sed -i 's#^SF:src\\#SF:booking-service/src/#; s#\\#/#g' booking-service/coverage/lcov.info
+          sed -i 's#^SF:src\\#SF:vehicle-service/src/#; s#\\#/#g' vehicle-service/coverage/lcov.info
 
       - name: Cache SonarQube packages
         uses: actions/cache@v4

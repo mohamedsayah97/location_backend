@@ -74,7 +74,13 @@
       "^(\\.{1,2}/.*)\\.js$": "$1"
     },
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "**/*.(t|j)s",
+      "!**/generated/**",
+      "!**/*.spec.ts"
+    ],
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "<rootDir>/generated/"
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
