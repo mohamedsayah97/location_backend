@@ -1,22 +1,46 @@
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
 
 describe('AppController', () => {
   let appController: AppController;
 
+  const kafkaMock = {
+    emit: jest.fn().mockReturnValue('mocked-event'),
+  };
+
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
-      providers: [AppService],
+      providers: [
+        {
+          provide: 'KAFKA_SERVICE',
+          useValue: kafkaMock,
+        },
+      ],
     }).compile();
 
     appController = app.get<AppController>(AppController);
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('createBooking', () => {
+    it('should emit booking_created event', () => {
+      const result = appController.createBooking();
+
+      expect(kafkaMock.emit).toHaveBeenCalledWith(
+        'booking_created',
+        {
+          bookingId: 1,
+          vehicleId: 10,
+          customerId: 5,
+        },
+      );
+
+      expect(result).toBe('mocked-event');
     });
   });
 });
