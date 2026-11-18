@@ -1,23 +1,42 @@
-FROM node:lts-alpine
+
+# Stage 1: Build the application
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
 COPY package.json package-lock.json ./
+RUN npm ci --ignore-scripts
 
-# Install dependencies
-RUN npm ci
-
-# Copy application code
-COPY . .
+COPY prisma ./prisma
+COPY prisma7.config.ts ./
+COPY tsconfig.json tsconfig.build.json nest-cli.json ./
+COPY src ./src
 
 # Generate Prisma Client
-RUN npx prisma generate
+RUN DATABASE_URL="postgresql://user:password@localhost:5432/booking_db" \
+    ./node_modules/.bin/prisma generate --config prisma7.config.ts
 
-# Build NestJS application
+# Build NestJS
 RUN npm run build
+
+
+# Stage 2: Production image
+FROM node:22-alpine AS production
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts \
+    && npm cache clean --force
+
+# Copy generated Prisma Client and runtime files
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/dist ./dist
+
+USER node
 
 EXPOSE 3002
 
-# Start application
-CMD ["npm", "run", "start:prod"]
+CMD ["node", "dist/src/main.js"]
